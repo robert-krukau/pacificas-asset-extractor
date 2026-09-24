@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 12px;
+      color: var(--figma-color-text, #1e1e1e);
+      background: var(--figma-color-bg, #ffffff);
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 14px 16px 12px;
+      background: var(--figma-color-bg, #ffffff);
+      border-bottom: 1px solid var(--figma-color-border, #e5e5e5);
+    }
+
+    .title {
+      margin: 0 0 12px;
+      font-size: 16px;
+      line-height: 20px;
+      font-weight: 600;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 2px;
+      border-radius: 7px;
+      background: var(--figma-color-bg-secondary, #f2f2f2);
+    }
+
+    .segment {
+      min-height: 30px;
+      padding: 6px 10px;
+      border: 0;
+      border-radius: 5px;
+      color: var(--figma-color-text-secondary, #666666);
+      background: transparent;
+      cursor: pointer;
+      transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .segment:hover:not(:disabled) {
+      color: var(--figma-color-text, #1e1e1e);
+    }
+
+    .segment.active {
+      color: var(--figma-color-text, #1e1e1e);
+      background: var(--figma-color-bg, #ffffff);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+      font-weight: 500;
+    }
+
+    .segment:disabled {
+      cursor: default;
+      opacity: 0.6;
+    }
+
+    .summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 42px;
+      padding-top: 10px;
+    }
+
+    #status {
+      min-width: 0;
+      color: var(--figma-color-text-secondary, #666666);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #status strong {
+      color: var(--figma-color-text, #1e1e1e);
+      font-weight: 600;
+    }
+
+    .primary-button {
+      min-height: 30px;
+      padding: 6px 11px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: #ffffff;
+      background: var(--figma-color-bg-brand, #0d99ff);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .primary-button:hover:not(:disabled) {
+      background: var(--figma-color-bg-brand-hover, #0a84e8);
+    }
+
+    .primary-button:disabled {
+      cursor: default;
+      opacity: 0.45;
+    }
+
+    #result {
+      padding: 0 16px 12px;
+    }
+
+    .state {
+      padding: 32px 8px;
+      text-align: center;
+      color: var(--figma-color-text-secondary, #777777);
+    }
+
+    .asset {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      min-height: 76px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--figma-color-border, #e5e5e5);
+    }
+
+    .asset:last-child {
+      border-bottom: 0;
+    }
+
+    .preview {
+      width: 56px;
+      height: 56px;
+      object-fit: cover;
+      border-radius: 6px;
+      background: var(--figma-color-bg-secondary, #eeeeee);
+      flex-shrink: 0;
+    }
+
+    .asset-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .asset-page {
+      margin-bottom: 2px;
+      font-size: 11px;
+      line-height: 14px;
+      color: var(--figma-color-text-tertiary, #888888);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .asset-name {
+      font-size: 12px;
+      line-height: 16px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .asset-meta {
+      margin-top: 3px;
+      font-size: 11px;
+      line-height: 14px;
+      color: var(--figma-color-text-secondary, #777777);
+      white-space: nowrap;
+    }
+
+    .icon-button {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: 1px solid var(--figma-color-border, #d6d6d6);
+      border-radius: 6px;
+      color: var(--figma-color-icon, #333333);
+      background: var(--figma-color-bg, #ffffff);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .icon-button:hover {
+      background: var(--figma-color-bg-hover, #f4f4f4);
+    }
+
+    .icon-button svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="toolbar">
+    <h1 class="title">Asset Extractor</h1>
+
+    <div class="segmented" role="group" aria-label="Scan scope">
+      <button id="scan-page" class="segment active" type="button">
+        Current page
+      </button>
+      <button id="scan-file" class="segment" type="button">
+        Entire file
+      </button>
+    </div>
+
+    <div class="summary">
+      <div id="status">Scanning current page…</div>
+      <button id="download-all" class="primary-button" type="button" disabled>
+        Download all
+      </button>
+    </div>
+  </div>
+
+  <div id="result">
+    <div class="state">Scanning…</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+  <script>
+    const result = document.getElementById("result");
+    const status = document.getElementById("status");
+    const scanPageButton = document.getElementById("scan-page");
+    const scanFileButton = document.getElementById("scan-file");
+    const downloadAllButton = document.getElementById("download-all");
+
+    let currentGifs = [];
+    let currentScope = "page";
+    let previewUrls = [];
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) return `${bytes} B`;
+
+      const kb = bytes / 1024;
+      if (kb < 1024) return `${kb.toFixed(1)} KB`;
+
+      return `${(kb / 1024).toFixed(2)} MB`;
+    }
+
+    function sanitizeFilePart(value, fallback) {
+      return value
+        .replace(/[<>:"/\\|?*]/g, "_")
+        .trim() || fallback;
+    }
+
+    function buildFileName(gif, index) {
+      const safePage = sanitizeFilePart(gif.pageName, "Page");
+      const safeLayer = sanitizeFilePart(gif.name, "Asset");
+      const number = String(index + 1).padStart(2, "0");
+
+      return `${safePage}_${safeLayer}_${number}.gif`;
+    }
+
+    function revokePreviewUrls() {
+      for (const url of previewUrls) {
+        URL.revokeObjectURL(url);
+      }
+
+      previewUrls = [];
+    }
+
+    function setScope(scope) {
+      currentScope = scope;
+
+      scanPageButton.classList.toggle("active", scope === "page");
+      scanFileButton.classList.toggle("active", scope === "file");
+
+      runScan(scope);
+    }
+
+    function setScanning(isScanning) {
+      scanPageButton.disabled = isScanning;
+      scanFileButton.disabled = isScanning;
+      downloadAllButton.disabled = isScanning || currentGifs.length === 0;
+    }
+
+    function runScan(scope) {
+      currentGifs = [];
+      revokePreviewUrls();
+
+      const scopeLabel = scope === "page" ? "current page" : "entire file";
+
+      status.textContent = `Scanning ${scopeLabel}…`;
+      result.innerHTML = `<div class="state">Scanning…</div>`;
+
+      setScanning(true);
+
+      parent.postMessage({
+        pluginMessage: {
+          type: "scan",
+          scope
+        }
+      }, "*");
+    }
+
+    function downloadGif(gif, index) {
+      const bytes = new Uint8Array(gif.bytes);
+      const blob = new Blob([bytes], { type: "image/gif" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = buildFileName(gif, index);
+      a.click();
+
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+
+    function renderGifs(gifs) {
+      revokePreviewUrls();
+      result.innerHTML = "";
+
+      gifs.forEach((gif, index) => {
+        const row = document.createElement("div");
+        row.className = "asset";
+
+        const preview = document.createElement("img");
+        preview.className = "preview";
+        preview.alt = "";
+
+        const bytes = new Uint8Array(gif.bytes);
+        const blob = new Blob([bytes], { type: "image/gif" });
+        const previewUrl = URL.createObjectURL(blob);
+
+        preview.src = previewUrl;
+        previewUrls.push(previewUrl);
+
+        const info = document.createElement("div");
+        info.className = "asset-info";
+
+        const page = document.createElement("div");
+        page.className = "asset-page";
+        page.textContent = gif.pageName;
+
+        const name = document.createElement("div");
+        name.className = "asset-name";
+        name.textContent = gif.name;
+
+        const meta = document.createElement("div");
+        meta.className = "asset-meta";
+        meta.textContent =
+          `${formatBytes(gif.bytes.length)} · Used ${gif.count}×`;
+
+        info.appendChild(page);
+        info.appendChild(name);
+        info.appendChild(meta);
+
+        const button = document.createElement("button");
+        button.className = "icon-button";
+        button.type = "button";
+        button.title = "Download GIF";
+        button.setAttribute("aria-label", `Download ${gif.name}`);
+        button.innerHTML = `
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 2.5v7"></path>
+            <path d="M5.25 7.5 8 10.25 10.75 7.5"></path>
+            <path d="M3 12.5h10"></path>
+          </svg>
+        `;
+
+        button.onclick = () => downloadGif(gif, index);
+
+        row.appendChild(preview);
+        row.appendChild(info);
+        row.appendChild(button);
+
+        result.appendChild(row);
+      });
+    }
+
+    scanPageButton.onclick = () => {
+      if (currentScope !== "page") {
+        setScope("page");
+      }
+    };
+
+    scanFileButton.onclick = () => {
+      if (currentScope !== "file") {
+        setScope("file");
+      }
+    };
+
+    downloadAllButton.onclick = async () => {
+      if (currentGifs.length === 0) return;
+
+      downloadAllButton.disabled = true;
+      downloadAllButton.textContent = "Preparing…";
+
+      try {
+        const zip = new JSZip();
+
+        currentGifs.forEach((gif, index) => {
+          const bytes = new Uint8Array(gif.bytes);
+          zip.file(buildFileName(gif, index), bytes);
+        });
+
+        const blob = await zip.generateAsync({
+          type: "blob"
+        });
+
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "figma-gifs.zip";
+        a.click();
+
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+      } finally {
+        downloadAllButton.textContent = "Download all";
+        downloadAllButton.disabled = currentGifs.length === 0;
+      }
+    };
+
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (!msg) return;
+
+      if (msg.type === "scan-result") {
+        if (msg.scope !== currentScope) return;
+
+        currentGifs = msg.gifs;
+        setScanning(false);
+
+        if (currentGifs.length === 0) {
+          status.textContent = "No GIFs found";
+          result.innerHTML = `<div class="state">No GIFs found in this scope.</div>`;
+          downloadAllButton.disabled = true;
+          return;
+        }
+
+        status.innerHTML =
+          `<strong>${currentGifs.length}</strong> unique GIF${currentGifs.length === 1 ? "" : "s"}`;
+
+        downloadAllButton.disabled = false;
+        renderGifs(currentGifs);
+      }
+
+      if (msg.type === "scan-error") {
+        if (msg.scope !== currentScope) return;
+
+        currentGifs = [];
+        setScanning(false);
+
+        status.textContent = "Scan failed";
+        result.innerHTML =
+          `<div class="state">${msg.message || "Something went wrong."}</div>`;
+      }
+    };
+
+    window.addEventListener("beforeunload", revokePreviewUrls);
+
+    runScan("page");
+  </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "pacificas-asset-extractor",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.139.0",
+    "typescript": "^7.0.2"
+  }
+}
